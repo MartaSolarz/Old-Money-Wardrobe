@@ -82,9 +82,9 @@ function OutfitsView({
             const matchesOutfitTags = !filters.tags?.length ||
                 filters.tags.some(tag => outfit.tags?.includes(tag));
 
-            // Filtr kolorów - sprawdza czy outfit zawiera ubranie w wybranym kolorze
+            // Filtr kolorów - sprawdza czy outfit zawiera ubrania we WSZYSTKICH wybranych kolorach
             const matchesColors = !filters.colors?.length ||
-                filters.colors.some(selectedColor => {
+                filters.colors.every(selectedColor => {
                     return outfit.items.some(itemId => {
                         const item = getItemById(itemId);
                         return item?.color === selectedColor;
@@ -237,6 +237,23 @@ function OutfitsView({
                                     />
                                 </div>
                             </div>
+                            <button
+                                className="reset-filters-btn"
+                                onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '', sortBy: 'date_desc' })}
+                                style={{
+                                    marginTop: '20px',
+                                    padding: '10px 20px',
+                                    background: 'rgba(231, 76, 60, 0.1)',
+                                    border: '1px solid rgba(231, 76, 60, 0.3)',
+                                    borderRadius: '6px',
+                                    color: '#e74c3c',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Wyczyść wszystkie filtry
+                            </button>
                         </div>
 
                         {/* Kolory ubrań w outficie */}
@@ -251,6 +268,12 @@ function OutfitsView({
                                 color: '#555'
                             }}>
                                 Kolory ubrań ({(filters.colors || []).length > 0 ? filters.colors.length : 'wszystkie'})
+                                <div style={{ fontSize: '11px', fontWeight: 'normal', color: '#888', marginTop: '2px' }}>
+                                    {(filters.colors || []).length > 1 ?
+                                        'Outfity zawierające elementy we WSZYSTKICH wybranych kolorach' :
+                                        'Outfity zawierające elementy w wybranym kolorze'
+                                    }
+                                </div>
                             </h3>
                             <div className="checkbox-grid" style={{
                                 display: 'flex',
@@ -323,24 +346,6 @@ function OutfitsView({
                             </div>
                         </div>
                     </div>
-
-                    <button
-                        className="reset-filters-btn"
-                        onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '', sortBy: 'date_desc' })}
-                        style={{
-                            marginTop: '20px',
-                            padding: '10px 20px',
-                            background: 'rgba(231, 76, 60, 0.1)',
-                            border: '1px solid rgba(231, 76, 60, 0.3)',
-                            borderRadius: '6px',
-                            color: '#e74c3c',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '500'
-                        }}
-                    >
-                        Wyczyść wszystkie filtry
-                    </button>
                 </div>
 
                 <div className="items-grid">
@@ -453,16 +458,19 @@ function OutfitsView({
                                     color: '#666'
                                 }}>
                                     <div style={{ marginBottom: '6px' }}>
-                                        <strong>{outfit.items.length} elementów</strong>
-                                        <div style={{ float: 'right', color: '#888' }}>
-                                            Dodano: {formatDate(outfit.createdAt)}
+                                        <strong>Liczba elementów: {outfit.items.length}</strong>
+                                        <div style={{ color: '#888', float: 'right' }}>
+                                            {outfit.updatedAt && outfit.updatedAt !== outfit.createdAt ? (
+                                                <div>
+                                                    {formatDate(outfit.updatedAt)}
+                                                </div>
+                                            ) : (
+                                                <div style={{ float: 'right' }}>
+                                                   {formatDate(outfit.createdAt)}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    {outfit.updatedAt && outfit.updatedAt !== outfit.createdAt && (
-                                        <div style={{ marginBottom: '6px', color: '#888' }}>
-                                            Zaktualizowano: {formatDate(outfit.updatedAt)}
-                                        </div>
-                                    )}
                                     <div style={{ marginTop: '4px', clear: 'both' }}>
                                         {outfit.items.map(itemId => {
                                             const item = getItemById(itemId);

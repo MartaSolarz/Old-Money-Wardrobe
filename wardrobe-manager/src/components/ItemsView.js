@@ -250,6 +250,23 @@ function ItemsView({
                                     />
                                 </div>
                             </div>
+                            <button
+                                className="reset-filters-btn"
+                                onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '', sortBy: 'date_desc' })}
+                                style={{
+                                    marginTop: '20px',
+                                    padding: '10px 20px',
+                                    background: 'rgba(231, 76, 60, 0.1)',
+                                    border: '1px solid rgba(231, 76, 60, 0.3)',
+                                    borderRadius: '6px',
+                                    color: '#e74c3c',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Wyczyść wszystkie filtry
+                            </button>
                         </div>
 
                         {/* Kolory */}
@@ -378,24 +395,6 @@ function ItemsView({
                             </div>
                         </div>
                     </div>
-
-                    <button
-                        className="reset-filters-btn"
-                        onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '', sortBy: 'date_desc' })}
-                        style={{
-                            marginTop: '20px',
-                            padding: '10px 20px',
-                            background: 'rgba(231, 76, 60, 0.1)',
-                            border: '1px solid rgba(231, 76, 60, 0.3)',
-                            borderRadius: '6px',
-                            color: '#e74c3c',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '500'
-                        }}
-                    >
-                        Wyczyść wszystkie filtry
-                    </button>
                 </div>
 
                 <div className="items-grid">

@@ -3,7 +3,7 @@ import React from 'react';
 function Sidebar({ currentView, onViewChange, onAddItem, onCreateOutfit }) {
     return (
         <div className="sidebar">
-            <div className="logo">Wardrobe</div>
+            <div className="logo">Wardrobe Manager</div>
 
             <nav>
                 <div
