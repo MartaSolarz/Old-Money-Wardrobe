@@ -29,7 +29,7 @@ body {
 }
 
 .logo {
-  font-size: 24px;
+  font-size: 25px;
   font-weight: 700;
   color: #2c3e50;
   margin-top: 5px;
@@ -647,6 +647,222 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100px;
+}
+
+/* Dodatkowe style dla funkcji masowego dodawania */
+
+/* Dodatkowy przycisk w sidebarze */
+.action-buttons .btn-secondary:nth-child(2) {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.7) 0%, rgba(118, 75, 162, 0.7) 100%);
+  color: white;
+  border: none;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.action-buttons .btn-secondary:nth-child(2):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Style dla modalu masowego dodawania */
+.bulk-add-item-card {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.bulk-add-item-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.bulk-add-header {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.bulk-add-content {
+  display: flex;
+  height: 280px;
+}
+
+.bulk-add-image {
+  width: 140px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(0,0,0,0.05);
+}
+
+.bulk-add-form {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.bulk-add-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.bulk-add-label {
+  display: block;
+  margin-bottom: 4px;
+  fontSize: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.bulk-add-input, .bulk-add-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 6px;
+  fontSize: 13px;
+  transition: border-color 0.2s ease;
+  background: white;
+}
+
+.bulk-add-input:focus, .bulk-add-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.bulk-add-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.bulk-add-tag {
+  padding: 4px 8px;
+  fontSize: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.bulk-add-tag:hover {
+  transform: translateY(-1px);
+}
+
+.bulk-add-tag.selected {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.bulk-add-tag:not(.selected) {
+  background: rgba(255, 255, 255, 0.8);
+  color: #666;
+}
+
+.bulk-add-remove-btn {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 4px;
+  color: #e74c3c;
+  cursor: pointer;
+  padding: 4px 8px;
+  fontSize: 12px;
+  transition: all 0.2s ease;
+}
+
+.bulk-add-remove-btn:hover {
+  background: rgba(231, 76, 60, 0.2);
+  transform: translateY(-1px);
+}
+
+.bulk-add-stats {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.bulk-add-stats strong {
+  color: #667eea;
+  font-size: 16px;
+}
+
+.bulk-add-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  padding: 0 4px;
+}
+
+/* Responsywność dla mniejszych ekranów */
+@media (max-width: 768px) {
+  .bulk-add-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bulk-add-content {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .bulk-add-image {
+    width: 100%;
+    height: 200px;
+    border-right: none;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .bulk-add-form {
+    min-height: 200px;
+  }
+}
+
+/* Animacje ładowania */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bulk-add-item-card {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Lepsze style dla przycisków dodawania */
+.bulk-add-more-btn {
+  margin-right: auto;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 8px;
+  color: #667eea;
+  cursor: pointer;
+  fontSize: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.bulk-add-more-btn:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 /* Responsive */

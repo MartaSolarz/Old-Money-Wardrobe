@@ -5,14 +5,27 @@ import ItemsView from './components/ItemsView';
 import OutfitsView from './components/OutfitsView';
 import Settings from './components/Settings';
 import AddItemModal from './components/AddItemModal';
+import BulkAddModal from './components/BulkAddModal';
 import ItemEditModal from './components/ItemEditModal';
 import OutfitModal from './components/OutfitModal';
 import OutfitEditModal from './components/OutfitEditModal';
 import { v4 as uuidv4 } from 'uuid';
 
-const colorsList = ['Czarny', 'Biały', 'Beżowy', 'Khaki', 'Navy', 'Burgund', 'Zielony', 'Szary', 'Brązowy', 'Czerwony', 'Różowy', 'Srebrny', 'Złoty', 'Pomarańczowy', 'Fioletowy', 'Niebieski'];
-const categoriesList = ['Koszula', 'Spodnie', 'Sukienka', 'Marynarka', 'Spódnica', 'Buty', 'Pasek', 'Biżuteria', 'Chusta', 'Sweter'];
-const tagsList = ['Casual', 'Eleganckie', 'Sport', 'Praca', 'Wieczorowe'];
+const colorsList = [
+  'Biały', 'Beżowy', 'Khaki', 'Navy', 'Burgund', 'Zielony', 'Szary',
+  'Brązowy', 'Czerwony', 'Czarny', 'Różowy', 'Srebrny', 'Złoty',
+  'Fuksja', 'Błękitny'
+].sort();
+
+const categoriesList = [
+  'Koszula', 'Top', 'T-shirt', 'Marynarka', 'Bluza', 'Sweter',
+  'Spodnie', 'Spódnica', 'Szorty', 'Rajstopy', 'Sukienka', 'Buty',
+  'Pasek', 'Chusta', 'Dodatki'
+].sort();
+
+const tagsList = [
+  'Casual', 'Eleganckie', 'Sport', 'Praca', 'Wieczorowe'
+].sort();
 
 function App() {
   const [currentView, setCurrentView] = useState('items');
@@ -24,6 +37,7 @@ function App() {
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const [showAddItem, setShowAddItem] = useState(false);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [creatingOutfit, setCreatingOutfit] = useState(false);
   const [editingOutfit, setEditingOutfit] = useState(null);
@@ -173,6 +187,7 @@ function App() {
             currentView={currentView}
             onViewChange={setCurrentView}
             onAddItem={() => setShowAddItem(true)}
+            onBulkAddItems={() => setShowBulkAdd(true)}
             onCreateOutfit={() => setCreatingOutfit(true)}
         />
 
@@ -234,9 +249,21 @@ function App() {
           )}
         </main>
 
+        {/* Single Item Add Modal */}
         {showAddItem && (
             <AddItemModal
                 onClose={() => setShowAddItem(false)}
+                onSave={addItems}
+                colors={colors}
+                categories={categories}
+                tags={tags}
+            />
+        )}
+
+        {/* Bulk Add Modal */}
+        {showBulkAdd && (
+            <BulkAddModal
+                onClose={() => setShowBulkAdd(false)}
                 onSave={addItems}
                 colors={colors}
                 categories={categories}
