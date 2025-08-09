@@ -28,8 +28,29 @@ function App() {
   const [creatingOutfit, setCreatingOutfit] = useState(false);
   const [editingOutfit, setEditingOutfit] = useState(null);
 
-  const [itemFilters, setItemFilters] = useState({ color: '', category: '', tag: '', search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '' });
-  const [outfitFilters, setOutfitFilters] = useState({ tag: '', search: '', dateFrom: '', dateTo: '', colors: [], categories: [], tags: [] });
+  const [itemFilters, setItemFilters] = useState({
+    color: '',
+    category: '',
+    tag: '',
+    search: '',
+    colors: [],
+    categories: [],
+    tags: [],
+    dateFrom: '',
+    dateTo: '',
+    sortBy: 'date_desc'
+  });
+
+  const [outfitFilters, setOutfitFilters] = useState({
+    tag: '',
+    search: '',
+    dateFrom: '',
+    dateTo: '',
+    colors: [],
+    categories: [],
+    tags: [],
+    sortBy: 'date_desc'
+  });
 
   // Load data on startup - tylko raz przy starcie
   useEffect(() => {
@@ -130,76 +151,6 @@ function App() {
     setOutfits(prev => prev.map(outfit => outfit.id === id ? { ...outfit, ...updatedOutfit } : outfit));
   };
 
-  const filteredItems = items.filter(item => {
-    // Wyszukiwanie tekstowe
-    if (itemFilters.search && !item.name.toLowerCase().includes(itemFilters.search.toLowerCase())) {
-      return false;
-    }
-
-    // Kolory (nowy system z tablicą)
-    if (itemFilters.colors?.length > 0 && !itemFilters.colors.includes(item.color)) {
-      return false;
-    }
-
-    // Kategorie (nowy system z tablicą)
-    if (itemFilters.categories?.length > 0 && !itemFilters.categories.includes(item.category)) {
-      return false;
-    }
-
-    // Tagi (nowy system z tablicą)
-    if (itemFilters.tags?.length > 0 && !itemFilters.tags.some(tag => item.tags?.includes(tag))) {
-      return false;
-    }
-
-    // Stary system (dla kompatybilności)
-    if (itemFilters.color && item.color !== itemFilters.color) return false;
-    if (itemFilters.category && item.category !== itemFilters.category) return false;
-    if (itemFilters.tag && !item.tags?.includes(itemFilters.tag)) return false;
-
-    // Filtr daty
-    if (itemFilters.dateFrom || itemFilters.dateTo) {
-      const itemDate = new Date(item.createdAt || item.updatedAt || '2000-01-01');
-      const fromDate = itemFilters.dateFrom ? new Date(itemFilters.dateFrom) : new Date('2000-01-01');
-      const toDate = itemFilters.dateTo ? new Date(itemFilters.dateTo + 'T23:59:59') : new Date('2100-12-31');
-
-      if (itemDate < fromDate || itemDate > toDate) return false;
-    }
-
-    return true;
-  }).sort((a, b) => {
-    // Sortuj po dacie utworzenia (najnowsze pierwsze)
-    const dateA = new Date(a.createdAt || '2000-01-01');
-    const dateB = new Date(b.createdAt || '2000-01-01');
-    return dateB - dateA;
-  });
-
-  const filteredOutfits = outfits.filter(outfit => {
-    const matchesTag = !outfitFilters.tag || outfit.tags?.includes(outfitFilters.tag);
-    const matchesSearch = !outfitFilters.search ||
-        outfit.name.toLowerCase().includes(outfitFilters.search.toLowerCase()) ||
-        outfit.items.some(itemId => {
-          const item = items.find(i => i.id === itemId);
-          return item?.name.toLowerCase().includes(outfitFilters.search.toLowerCase());
-        });
-
-    // Filtr daty dla outfitów
-    let matchesDate = true;
-    if (outfitFilters.dateFrom || outfitFilters.dateTo) {
-      const outfitDate = new Date(outfit.createdAt || outfit.updatedAt || '2000-01-01');
-      const fromDate = outfitFilters.dateFrom ? new Date(outfitFilters.dateFrom) : new Date('2000-01-01');
-      const toDate = outfitFilters.dateTo ? new Date(outfitFilters.dateTo + 'T23:59:59') : new Date('2100-12-31');
-
-      matchesDate = outfitDate >= fromDate && outfitDate <= toDate;
-    }
-
-    return matchesTag && matchesSearch && matchesDate;
-  }).sort((a, b) => {
-    // Sortuj po dacie utworzenia (najnowsze pierwsze)
-    const dateA = new Date(a.createdAt || '2000-01-01');
-    const dateB = new Date(b.createdAt || '2000-01-01');
-    return dateB - dateA;
-  });
-
   // Pokaż loading jeśli dane się jeszcze ładują
   if (!dataLoaded) {
     return (
@@ -228,7 +179,7 @@ function App() {
         <main className="main-content">
           {currentView === 'items' && (
               <ItemsView
-                  items={filteredItems}
+                  items={items}
                   filters={itemFilters}
                   onFiltersChange={setItemFilters}
                   onEditItem={setEditingItem}
@@ -241,7 +192,7 @@ function App() {
 
           {currentView === 'outfits' && (
               <OutfitsView
-                  outfits={filteredOutfits}
+                  outfits={outfits}
                   items={items}
                   filters={outfitFilters}
                   onFiltersChange={setOutfitFilters}

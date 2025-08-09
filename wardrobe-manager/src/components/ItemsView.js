@@ -50,19 +50,20 @@ function ItemsView({
         }
     };
 
-    const filterByDateRange = (outfit) => {
+    const filterByDateRange = (item) => {
         if (!filters.dateFrom && !filters.dateTo) return true;
 
-        const outfitDate = new Date(outfit.createdAt || outfit.updatedAt || '2000-01-01');
+        const itemDate = new Date(item.createdAt || item.updatedAt || '2000-01-01');
         const fromDate = filters.dateFrom ? new Date(filters.dateFrom) : new Date('2000-01-01');
         const toDate = filters.dateTo ? new Date(filters.dateTo + 'T23:59:59') : new Date('2100-12-31');
 
-        return outfitDate >= fromDate && outfitDate <= toDate;
+        return itemDate >= fromDate && itemDate <= toDate;
     };
 
-    // Filtrowanie elementów
-    const filteredItems = useMemo(() => {
-        return items.filter(item => {
+    // Filtrowanie i sortowanie elementów
+    const filteredAndSortedItems = useMemo(() => {
+        // Najpierw filtrujemy
+        let filtered = items.filter(item => {
             // Wyszukiwanie tekstowe
             if (filters.search && !item.name.toLowerCase().includes(filters.search.toLowerCase())) {
                 return false;
@@ -83,7 +84,41 @@ function ItemsView({
                 return false;
             }
 
+            // Filtr daty
+            if (!filterByDateRange(item)) {
+                return false;
+            }
+
             return true;
+        });
+
+        // Potem sortujemy
+        return filtered.sort((a, b) => {
+            const sortBy = filters.sortBy || 'date_desc';
+
+            switch (sortBy) {
+                case 'date_asc':
+                    const dateA = new Date(a.createdAt || '2000-01-01');
+                    const dateB = new Date(b.createdAt || '2000-01-01');
+                    return dateA - dateB;
+
+                case 'date_desc':
+                    const dateA2 = new Date(a.createdAt || '2000-01-01');
+                    const dateB2 = new Date(b.createdAt || '2000-01-01');
+                    return dateB2 - dateA2;
+
+                case 'name_asc':
+                    return a.name.localeCompare(b.name, 'pl');
+
+                case 'name_desc':
+                    return b.name.localeCompare(a.name, 'pl');
+
+                default:
+                    // Domyślnie sortuj po dacie (najnowsze pierwsze)
+                    const dateA3 = new Date(a.createdAt || '2000-01-01');
+                    const dateB3 = new Date(b.createdAt || '2000-01-01');
+                    return dateB3 - dateA3;
+            }
         });
     }, [items, filters]);
 
@@ -110,7 +145,7 @@ function ItemsView({
                 <div className="view-header">
                     <h1 className="view-title">Twoje ubrania</h1>
                     <div className="view-stats">
-                        {filteredItems.length} z {items.length} elementów
+                        {filteredAndSortedItems.length} z {items.length} elementów
                     </div>
                 </div>
 
@@ -137,6 +172,86 @@ function ItemsView({
                         gap: '20px',
                         alignItems: 'flex-start'
                     }}>
+
+                        {/* Filtr dat */}
+                        <div className="filter-section" style={{
+                            minWidth: '250px',
+                            flex: '1 1 250px'
+                        }}>
+                            {/* Sortowanie */}
+                            <div className="filter-section" style={{
+                                minWidth: '200px',
+                                flex: '1 1 200px'
+                            }}>
+                                <h3 style={{
+                                    margin: '0 0 10px 0',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    color: '#555'
+                                }}>
+                                    Sortowanie
+                                </h3>
+                                <select
+                                    value={filters.sortBy || 'date_desc'}
+                                    onChange={(e) => onFiltersChange({ ...filters, sortBy: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '6px',
+                                        fontSize: '13px',
+                                        background: 'white'
+                                    }}
+                                >
+                                    <option value="date_desc">Najnowsze pierwsze</option>
+                                    <option value="date_asc">Najstarsze pierwsze</option>
+                                    <option value="name_asc">Alfabetycznie A-Z</option>
+                                    <option value="name_desc">Alfabetycznie Z-A</option>
+                                </select>
+                            </div>
+
+                            <h3 style={{
+                                margin: '10px 0 10px 0',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: '#555'
+                            }}>
+                                Data dodania
+                            </h3>
+                            <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <label style={{ fontSize: '12px', minWidth: '20px' }}>Od:</label>
+                                    <input
+                                        type="date"
+                                        value={filters.dateFrom || ''}
+                                        onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
+                                        style={{
+                                            padding: '4px 8px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: '4px',
+                                            fontSize: '12px',
+                                            flex: 1
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <label style={{ fontSize: '12px', minWidth: '20px' }}>Do:</label>
+                                    <input
+                                        type="date"
+                                        value={filters.dateTo || ''}
+                                        onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
+                                        style={{
+                                            padding: '4px 8px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: '4px',
+                                            fontSize: '12px',
+                                            flex: 1
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Kolory */}
                         <div className="filter-section" style={{
                             minWidth: '200px',
@@ -266,7 +381,7 @@ function ItemsView({
 
                     <button
                         className="reset-filters-btn"
-                        onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [] })}
+                        onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '', sortBy: 'date_desc' })}
                         style={{
                             marginTop: '20px',
                             padding: '10px 20px',
@@ -284,7 +399,7 @@ function ItemsView({
                 </div>
 
                 <div className="items-grid">
-                    {filteredItems.map(item => (
+                    {filteredAndSortedItems.map(item => (
                         <div
                             key={item.id}
                             className="item-card"
@@ -384,7 +499,7 @@ function ItemsView({
                     ))}
                 </div>
 
-                {filteredItems.length === 0 && items.length > 0 && (
+                {filteredAndSortedItems.length === 0 && items.length > 0 && (
                     <div style={{
                         textAlign: 'center',
                         marginTop: '60px',

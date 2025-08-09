@@ -59,13 +59,6 @@ function OutfitsView({
         onFiltersChange({ ...filters, colors: newColors });
     };
 
-    const handleCategoryChange = (category, checked) => {
-        const newCategories = checked
-            ? [...(filters.categories || []), category]
-            : (filters.categories || []).filter(c => c !== category);
-        onFiltersChange({ ...filters, categories: newCategories });
-    };
-
     const handleTagChange = (tag, checked) => {
         const newTags = checked
             ? [...(filters.tags || []), tag]
@@ -73,9 +66,10 @@ function OutfitsView({
         onFiltersChange({ ...filters, tags: newTags });
     };
 
-    // Filtrowanie outfitów z uwzględnieniem kolorów ubrań w outficie
-    const filteredOutfits = useMemo(() => {
-        return outfits.filter(outfit => {
+    // Filtrowanie i sortowanie outfitów
+    const filteredAndSortedOutfits = useMemo(() => {
+        // Najpierw filtrujemy
+        let filtered = outfits.filter(outfit => {
             // Filtr tekstowy
             const matchesSearch = !filters.search ||
                 outfit.name.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -84,35 +78,52 @@ function OutfitsView({
                     return item?.name.toLowerCase().includes(filters.search.toLowerCase());
                 });
 
-            // Filtr tagów outfitu
-            const matchesTag = !filters.tag || outfit.tags?.includes(filters.tag);
-            const matchesOutfitTags = !filters.tags?.length || filters.tags.some(tag => outfit.tags?.includes(tag));
+            // Filtr tagów outfitu (dotyczy tagów samego outfitu)
+            const matchesOutfitTags = !filters.tags?.length ||
+                filters.tags.some(tag => outfit.tags?.includes(tag));
 
             // Filtr kolorów - sprawdza czy outfit zawiera ubranie w wybranym kolorze
-            const matchesColors = !filters.colors?.length || filters.colors.some(selectedColor => {
-                return outfit.items.some(itemId => {
-                    const item = getItemById(itemId);
-                    return item?.color === selectedColor;
+            const matchesColors = !filters.colors?.length ||
+                filters.colors.some(selectedColor => {
+                    return outfit.items.some(itemId => {
+                        const item = getItemById(itemId);
+                        return item?.color === selectedColor;
+                    });
                 });
-            });
-
-            // Filtr kategorii - sprawdza czy outfit zawiera ubranie z wybranej kategorii
-            const matchesCategories = !filters.categories?.length || filters.categories.some(selectedCategory => {
-                return outfit.items.some(itemId => {
-                    const item = getItemById(itemId);
-                    return item?.category === selectedCategory;
-                });
-            });
 
             // Filtr daty
             const matchesDate = filterByDateRange(outfit);
 
-            return matchesSearch && (matchesTag || matchesOutfitTags) && matchesColors && matchesCategories && matchesDate;
-        }).sort((a, b) => {
-            // Sortuj po dacie utworzenia (najnowsze pierwsze)
-            const dateA = new Date(a.createdAt || '2000-01-01');
-            const dateB = new Date(b.createdAt || '2000-01-01');
-            return dateB - dateA;
+            return matchesSearch && matchesOutfitTags && matchesColors && matchesDate;
+        });
+
+        // Potem sortujemy
+        return filtered.sort((a, b) => {
+            const sortBy = filters.sortBy || 'date_desc';
+
+            switch (sortBy) {
+                case 'date_asc':
+                    const dateA = new Date(a.createdAt || '2000-01-01');
+                    const dateB = new Date(b.createdAt || '2000-01-01');
+                    return dateA - dateB;
+
+                case 'date_desc':
+                    const dateA2 = new Date(a.createdAt || '2000-01-01');
+                    const dateB2 = new Date(b.createdAt || '2000-01-01');
+                    return dateB2 - dateA2;
+
+                case 'name_asc':
+                    return a.name.localeCompare(b.name, 'pl');
+
+                case 'name_desc':
+                    return b.name.localeCompare(a.name, 'pl');
+
+                default:
+                    // Domyślnie sortuj po dacie (najnowsze pierwsze)
+                    const dateA3 = new Date(a.createdAt || '2000-01-01');
+                    const dateB3 = new Date(b.createdAt || '2000-01-01');
+                    return dateB3 - dateA3;
+            }
         });
     }, [outfits, filters, items]);
 
@@ -122,7 +133,7 @@ function OutfitsView({
                 <div className="view-header">
                     <h1 className="view-title">Twoje outfity</h1>
                     <div className="view-stats">
-                        {filteredOutfits.length} z {outfits.length} outfitów
+                        {filteredAndSortedOutfits.length} z {outfits.length} outfitów
                     </div>
                 </div>
 
@@ -149,13 +160,45 @@ function OutfitsView({
                         gap: '20px',
                         alignItems: 'flex-start'
                     }}>
+
                         {/* Filtr dat */}
                         <div className="filter-section" style={{
                             minWidth: '250px',
                             flex: '1 1 250px'
                         }}>
+                            {/* Sortowanie */}
+                            <div className="filter-section" style={{
+                                minWidth: '200px',
+                                flex: '1 1 200px'
+                            }}>
+                                <h3 style={{
+                                    margin: '0 0 10px 0',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    color: '#555'
+                                }}>
+                                    Sortowanie
+                                </h3>
+                                <select
+                                    value={filters.sortBy || 'date_desc'}
+                                    onChange={(e) => onFiltersChange({ ...filters, sortBy: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '6px',
+                                        fontSize: '13px',
+                                        background: 'white'
+                                    }}
+                                >
+                                    <option value="date_desc"> Najnowsze pierwsze</option>
+                                    <option value="date_asc">Najstarsze pierwsze</option>
+                                    <option value="name_asc">Alfabetycznie A-Z</option>
+                                    <option value="name_desc">Alfabetycznie Z-A</option>
+                                </select>
+                            </div>
                             <h3 style={{
-                                margin: '0 0 10px 0',
+                                margin: '10px 0 10px 0',
                                 fontSize: '14px',
                                 fontWeight: '600',
                                 color: '#555'
@@ -196,7 +239,7 @@ function OutfitsView({
                             </div>
                         </div>
 
-                        {/* Kolory */}
+                        {/* Kolory ubrań w outficie */}
                         <div className="filter-section" style={{
                             minWidth: '200px',
                             flex: '1 1 200px'
@@ -233,48 +276,6 @@ function OutfitsView({
                                             style={{ marginRight: '6px' }}
                                         />
                                         <span>{color}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Kategorie */}
-                        <div className="filter-section" style={{
-                            minWidth: '200px',
-                            flex: '1 1 200px'
-                        }}>
-                            <h3 style={{
-                                margin: '0 0 10px 0',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: '#555'
-                            }}>
-                                Kategorie ubrań ({(filters.categories || []).length > 0 ? filters.categories.length : 'wszystkie'})
-                            </h3>
-                            <div className="checkbox-grid" style={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: '8px'
-                            }}>
-                                {categories.map(category => (
-                                    <label key={category} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        cursor: 'pointer',
-                                        fontSize: '13px',
-                                        padding: '4px 8px',
-                                        backgroundColor: (filters.categories || []).includes(category) ? 'rgba(52, 152, 219, 0.1)' : 'transparent',
-                                        borderRadius: '4px',
-                                        border: '1px solid #ddd',
-                                        whiteSpace: 'nowrap'
-                                    }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={(filters.categories || []).includes(category)}
-                                            onChange={(e) => handleCategoryChange(category, e.target.checked)}
-                                            style={{ marginRight: '6px' }}
-                                        />
-                                        <span>{category}</span>
                                     </label>
                                 ))}
                             </div>
@@ -325,7 +326,7 @@ function OutfitsView({
 
                     <button
                         className="reset-filters-btn"
-                        onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '' })}
+                        onClick={() => onFiltersChange({ search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '', sortBy: 'date_desc' })}
                         style={{
                             marginTop: '20px',
                             padding: '10px 20px',
@@ -343,7 +344,7 @@ function OutfitsView({
                 </div>
 
                 <div className="items-grid">
-                    {filteredOutfits.map(outfit => (
+                    {filteredAndSortedOutfits.map(outfit => (
                         <div key={outfit.id} className="outfit-card">
                             <div className="outfit-info">
                                 <div className="outfit-name">{outfit.name}</div>
@@ -417,7 +418,7 @@ function OutfitsView({
                                             minWidth: '80px'
                                         }}
                                     >
-                                        ✏️ Edytuj
+                                        Edytuj
                                     </button>
                                     <button
                                         onClick={(e) => {
@@ -438,7 +439,7 @@ function OutfitsView({
                                             minWidth: '80px'
                                         }}
                                     >
-                                        🗑️ Usuń
+                                        Usuń
                                     </button>
                                 </div>
 
@@ -482,7 +483,7 @@ function OutfitsView({
                     ))}
                 </div>
 
-                {filteredOutfits.length === 0 && outfits.length > 0 && (
+                {filteredAndSortedOutfits.length === 0 && outfits.length > 0 && (
                     <div style={{
                         textAlign: 'center',
                         marginTop: '60px',
