@@ -54,12 +54,12 @@ function AddItemModal({ onClose, onSave, colors, categories, tags }) {
             tags: selectedTags,
             notes: notes.trim(),
             images: selectedImages,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString() // Automatyczna data dodania
         };
 
         console.log('Saving item:', newItem);
         console.log('Images count:', selectedImages.length);
-        console.log('First image preview:', selectedImages[0] ? selectedImages[0].substring(0, 50) + '...' : 'none');
+        console.log('Created at:', newItem.createdAt);
 
         onSave([newItem]);
         onClose();

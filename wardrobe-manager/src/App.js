@@ -7,6 +7,7 @@ import Settings from './components/Settings';
 import AddItemModal from './components/AddItemModal';
 import ItemEditModal from './components/ItemEditModal';
 import OutfitModal from './components/OutfitModal';
+import OutfitEditModal from './components/OutfitEditModal';
 import { v4 as uuidv4 } from 'uuid';
 
 const colorsList = ['Czarny', 'Biały', 'Beżowy', 'Khaki', 'Navy', 'Burgund', 'Zielony', 'Szary', 'Brązowy', 'Czerwony', 'Różowy', 'Srebrny', 'Złoty', 'Pomarańczowy', 'Fioletowy', 'Niebieski'];
@@ -20,41 +21,88 @@ function App() {
   const [colors, setColors] = useState(colorsList);
   const [categories, setCategories] = useState(categoriesList);
   const [tags, setTags] = useState(tagsList);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [showAddItem, setShowAddItem] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [creatingOutfit, setCreatingOutfit] = useState(false);
+  const [editingOutfit, setEditingOutfit] = useState(null);
 
-  const [itemFilters, setItemFilters] = useState({ color: '', category: '', tag: '', search: '' });
-  const [outfitFilters, setOutfitFilters] = useState({ tag: '', search: '' });
+  const [itemFilters, setItemFilters] = useState({ color: '', category: '', tag: '', search: '', colors: [], categories: [], tags: [], dateFrom: '', dateTo: '' });
+  const [outfitFilters, setOutfitFilters] = useState({ tag: '', search: '', dateFrom: '', dateTo: '', colors: [], categories: [], tags: [] });
 
-  // Auto-save data
-  useEffect(() => {
-    const saveData = async () => {
-      const data = { items, outfits, colors, categories, tags };
-      await window.electronAPI?.saveData(data);
-    };
-
-    if (items.length > 0 || outfits.length > 0) {
-      saveData();
-    }
-  }, [items, outfits, colors, categories, tags]);
-
-  // Load data on startup
+  // Load data on startup - tylko raz przy starcie
   useEffect(() => {
     const loadData = async () => {
-      const result = await window.electronAPI?.loadData();
-      if (result?.success && result.data) {
-        const data = result.data;
-        setItems(data.items || []);
-        setOutfits(data.outfits || []);
-        setColors(data.colors || colorsList);
-        setCategories(data.categories || categoriesList);
-        setTags(data.tags || tagsList);
+      console.log('Loading data...');
+      try {
+        if (window.electronAPI?.loadData) {
+          const result = await window.electronAPI.loadData();
+          console.log('Load result:', result);
+
+          if (result?.success && result.data) {
+            const data = result.data;
+            console.log('Loaded data:', data);
+
+            setItems(data.items || []);
+            setOutfits(data.outfits || []);
+            setColors(data.colors || colorsList);
+            setCategories(data.categories || categoriesList);
+            setTags(data.tags || tagsList);
+          } else {
+            console.log('No saved data found, using defaults');
+            // Użyj domyślnych wartości jeśli nie ma zapisanych danych
+            setColors(colorsList);
+            setCategories(categoriesList);
+            setTags(tagsList);
+          }
+        } else {
+          console.log('electronAPI not available, using defaults');
+          setColors(colorsList);
+          setCategories(categoriesList);
+          setTags(tagsList);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // W przypadku błędu użyj domyślnych wartości
+        setColors(colorsList);
+        setCategories(categoriesList);
+        setTags(tagsList);
+      } finally {
+        setDataLoaded(true);
       }
     };
+
     loadData();
-  }, []);
+  }, []); // Pusty array dependency - uruchom tylko raz
+
+  // Auto-save data - zapisuj za każdym razem gdy coś się zmieni (po załadowaniu danych)
+  useEffect(() => {
+    const saveData = async () => {
+      if (!dataLoaded) {
+        console.log('Data not loaded yet, skipping save');
+        return; // Nie zapisuj dopóki dane nie zostały załadowane
+      }
+
+      console.log('Saving data...');
+      try {
+        const data = { items, outfits, colors, categories, tags };
+        console.log('Data to save:', data);
+
+        if (window.electronAPI?.saveData) {
+          const result = await window.electronAPI.saveData(data);
+          console.log('Save result:', result);
+        } else {
+          console.log('electronAPI not available for saving');
+        }
+      } catch (error) {
+        console.error('Error saving data:', error);
+      }
+    };
+
+    // Zapisuj dane za każdym razem gdy się zmienią (ale tylko po załadowaniu)
+    saveData();
+  }, [items, outfits, colors, categories, tags, dataLoaded]);
 
   const addItems = (newItems) => {
     const itemsWithId = newItems.map(item => ({ ...item, id: uuidv4() }));
@@ -78,11 +126,51 @@ function App() {
     setOutfits(prev => prev.filter(outfit => outfit.id !== id));
   };
 
+  const updateOutfit = (id, updatedOutfit) => {
+    setOutfits(prev => prev.map(outfit => outfit.id === id ? { ...outfit, ...updatedOutfit } : outfit));
+  };
+
   const filteredItems = items.filter(item => {
-    return (!itemFilters.color || item.color === itemFilters.color) &&
-        (!itemFilters.category || item.category === itemFilters.category) &&
-        (!itemFilters.tag || item.tags?.includes(itemFilters.tag)) &&
-        (!itemFilters.search || item.name.toLowerCase().includes(itemFilters.search.toLowerCase()));
+    // Wyszukiwanie tekstowe
+    if (itemFilters.search && !item.name.toLowerCase().includes(itemFilters.search.toLowerCase())) {
+      return false;
+    }
+
+    // Kolory (nowy system z tablicą)
+    if (itemFilters.colors?.length > 0 && !itemFilters.colors.includes(item.color)) {
+      return false;
+    }
+
+    // Kategorie (nowy system z tablicą)
+    if (itemFilters.categories?.length > 0 && !itemFilters.categories.includes(item.category)) {
+      return false;
+    }
+
+    // Tagi (nowy system z tablicą)
+    if (itemFilters.tags?.length > 0 && !itemFilters.tags.some(tag => item.tags?.includes(tag))) {
+      return false;
+    }
+
+    // Stary system (dla kompatybilności)
+    if (itemFilters.color && item.color !== itemFilters.color) return false;
+    if (itemFilters.category && item.category !== itemFilters.category) return false;
+    if (itemFilters.tag && !item.tags?.includes(itemFilters.tag)) return false;
+
+    // Filtr daty
+    if (itemFilters.dateFrom || itemFilters.dateTo) {
+      const itemDate = new Date(item.createdAt || item.updatedAt || '2000-01-01');
+      const fromDate = itemFilters.dateFrom ? new Date(itemFilters.dateFrom) : new Date('2000-01-01');
+      const toDate = itemFilters.dateTo ? new Date(itemFilters.dateTo + 'T23:59:59') : new Date('2100-12-31');
+
+      if (itemDate < fromDate || itemDate > toDate) return false;
+    }
+
+    return true;
+  }).sort((a, b) => {
+    // Sortuj po dacie utworzenia (najnowsze pierwsze)
+    const dateA = new Date(a.createdAt || '2000-01-01');
+    const dateB = new Date(b.createdAt || '2000-01-01');
+    return dateB - dateA;
   });
 
   const filteredOutfits = outfits.filter(outfit => {
@@ -93,8 +181,40 @@ function App() {
           const item = items.find(i => i.id === itemId);
           return item?.name.toLowerCase().includes(outfitFilters.search.toLowerCase());
         });
-    return matchesTag && matchesSearch;
+
+    // Filtr daty dla outfitów
+    let matchesDate = true;
+    if (outfitFilters.dateFrom || outfitFilters.dateTo) {
+      const outfitDate = new Date(outfit.createdAt || outfit.updatedAt || '2000-01-01');
+      const fromDate = outfitFilters.dateFrom ? new Date(outfitFilters.dateFrom) : new Date('2000-01-01');
+      const toDate = outfitFilters.dateTo ? new Date(outfitFilters.dateTo + 'T23:59:59') : new Date('2100-12-31');
+
+      matchesDate = outfitDate >= fromDate && outfitDate <= toDate;
+    }
+
+    return matchesTag && matchesSearch && matchesDate;
+  }).sort((a, b) => {
+    // Sortuj po dacie utworzenia (najnowsze pierwsze)
+    const dateA = new Date(a.createdAt || '2000-01-01');
+    const dateB = new Date(b.createdAt || '2000-01-01');
+    return dateB - dateA;
   });
+
+  // Pokaż loading jeśli dane się jeszcze ładują
+  if (!dataLoaded) {
+    return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '18px',
+          color: '#667eea'
+        }}>
+          Ładowanie aplikacji...
+        </div>
+    );
+  }
 
   return (
       <div className="app">
@@ -126,7 +246,10 @@ function App() {
                   filters={outfitFilters}
                   onFiltersChange={setOutfitFilters}
                   onDeleteOutfit={deleteOutfit}
+                  onEditOutfit={setEditingOutfit}
                   tags={tags}
+                  colors={colors}
+                  categories={categories}
               />
           )}
 
@@ -140,14 +263,20 @@ function App() {
                   onTagsChange={setTags}
                   onExport={() => window.electronAPI?.exportData()}
                   onImport={async () => {
-                    const result = await window.electronAPI?.importData();
-                    if (result?.success && result.data) {
-                      const data = result.data;
-                      setItems(data.items || []);
-                      setOutfits(data.outfits || []);
-                      setColors(data.colors || []);
-                      setCategories(data.categories || []);
-                      setTags(data.tags || []);
+                    try {
+                      const result = await window.electronAPI?.importData();
+                      if (result?.success && result.data) {
+                        const data = result.data;
+                        setItems(data.items || []);
+                        setOutfits(data.outfits || []);
+                        setColors(data.colors || colorsList);
+                        setCategories(data.categories || categoriesList);
+                        setTags(data.tags || tagsList);
+                        console.log('Data imported successfully');
+                      }
+                    } catch (error) {
+                      console.error('Error importing data:', error);
+                      alert('Błąd podczas importowania danych: ' + error.message);
                     }
                   }}
               />
@@ -185,6 +314,21 @@ function App() {
                 onSave={(outfit) => {
                   addOutfit(outfit);
                   setCreatingOutfit(false);
+                }}
+                colors={colors}
+                categories={categories}
+                tags={tags}
+            />
+        )}
+
+        {editingOutfit && (
+            <OutfitEditModal
+                outfit={editingOutfit}
+                items={items}
+                onClose={() => setEditingOutfit(null)}
+                onSave={(updatedOutfit) => {
+                  updateOutfit(editingOutfit.id, updatedOutfit);
+                  setEditingOutfit(null);
                 }}
                 colors={colors}
                 categories={categories}
